@@ -6,7 +6,7 @@ import json
 from dateutil.parser import parse, tz
 import urllib.request
 import time
-
+from pprint import pprint
 import facepy
 from facepy import GraphAPI
 
@@ -20,7 +20,6 @@ with open('./ACCESS_TOKEN', 'r') as f:
 	access_token = f.readline().rstrip('\n')
 
 graph = GraphAPI(access_token)
-
 
 def get_comments(post_id):
 	base_query = post_id + '/comments'
@@ -51,7 +50,7 @@ def get_picture(post_id, dir="."):
 		return None
 
 
-def get_event_picture(post_id, dir="."):
+def get_event_picture(post_id):
 	base_query = post_id + '?fields=object_id'
 	try:
 		pic_id = graph.get(base_query)['object_id']
@@ -84,12 +83,6 @@ def get_link(post_id):
 def get_event(post_id, page_id):
 	base_query = page_id + '/events'
 	all_events = graph.get(base_query)
-	message = """
-{}
-Date: {}
-Time: {}
-Veunu: {}
-	"""
 	for event in all_events['data']:
 		if event['id'] in post_id:
 			if 'description' in event.keys():
@@ -113,13 +106,20 @@ Veunu: {}
 				attenders = 0 
 
 			# return message
-	eventDict = {"description":description,
+	eventDict = {"id" : post_id,
+				 "link" : get_link(post_id),
+				 "pic" : get_event_picture(post_id),
+				 "description":description,
 				 "startDate" : startDate,
 				 "startTime" : startTime,
 				 "placeName" : placeName,
 				 "placeLocation" : placeLocation,
 				 "attenders" : attenders}
-	print (eventDict)
+	if placeLocation :
+		eventDict["placeLocation"]["longitude"] = float(eventDict["placeLocation"]["longitude"])
+		eventDict["placeLocation"]["latitude"] = float(eventDict["placeLocation"]["latitude"])
+	return (eventDict)
+
 
 def get_shared_post(post_id):
 	print (post_id)
@@ -158,26 +158,26 @@ def get_video(post_id) :
 		return ""
 def get_feed(page_id, pages=2):
 	# check last update time
-	try:
-		old_data = json.load(open('docs/{}.json'.format(page_id), 'r'))
-		last_post_time = parse(old_data[0]['created_time'])
-	except FileNotFoundError:
-		old_data = []
-		last_post_time = parse("1950-01-01T12:05:06+0000")
+	# try:
+	# 	old_data = json.load(open('docs/{}.json'.format(page_id), 'r'))
+	# 	last_post_time = parse(old_data[0]['created_time'])
+	# except FileNotFoundError:
+	# 	old_data = []
+	# 	last_post_time = parse("1950-01-01T12:05:06+0000")
 
 	base_query = page_id + '/feed?limit=2'
 
 	# scrape the first page
 	print('scraping:', base_query)
 	feed = graph.get(base_query)
-	new_page_data = feed['data']
+	data = feed['data']
 
-	data = []
+	# data = []
 	eventData = []
-	is_new_post = (parse(new_page_data[0]['created_time']) > last_post_time)
+	# is_new_post = (parse(new_page_data[0]['created_time']) > last_post_time)
 
-	if is_new_post:
-		data = new_page_data
+	# if is_new_post:
+	# 	data = new_page_data
 
 	# determine the next page
 	next_page = feed['paging']['next']
@@ -188,16 +188,16 @@ def get_feed(page_id, pages=2):
 	pages = pages - 1
 
 	# scrape the rest of the pages
-	while (next_page is not False) and is_new_post and pages > 0:
+	while (next_page is not False) and pages > 0:
 		the_query = base_query + the_until_arg
 		print('baking:', the_query)
 		try:
 			feed = graph.get(the_query)
 			new_page_data = feed['data']
-			is_new_post = (
-				parse(new_page_data[0]['created_time']) > last_post_time)
+			# is_new_post = (
+			# 	parse(new_page_data[0]['created_time']) > last_post_time)
 
-			# data.extend(new_page_data)
+			data.extend(new_page_data)
 		except facepy.exceptions.OAuthError:
 			print('start again at', the_query)
 			break
@@ -214,13 +214,14 @@ def get_feed(page_id, pages=2):
 			next_page = False
 		pages = pages - 1
 		for post_dict in data:
-			post_dict['pic'] = get_picture(post_dict['id'], dir='docs')
-			post_dict['link'] = get_link(post_dict['id'])
+			# post_dict['pic'] = get_picture(post_dict['id'], dir='docs')
+			# post_dict['link'] = get_link(post_dict['id'])
 			if "story" in post_dict :  #Events and shared post have story key
 				if "event" in post_dict['story'] :
-					post_dict['message'] = get_event(post_dict['id'], page_id)
-					post_dict['pic'] = get_event_picture(post_dict['id'],dir='docs')
-					eventData.append(post_dict)
+					eventDetails = get_event(post_dict['id'], page_id)
+					eventDetails["created_time"] = post_dict["created_time"]
+					# post_dict['pic'] = get_event_picture(post_dict['id'],)
+					eventData.append(eventDetails)
 				# elif "shared" in post_dict['story'] :
 
 				# 	post_dict['message'] = '<b>' + post_dict['story'] + '</b>' + '\n\n' + get_shared_post(post_dict['id']) 
@@ -231,12 +232,14 @@ def get_feed(page_id, pages=2):
 			# 		post_dict['message'] = get_video(post_dict['id'])
 
 			
-	data.extend(old_data)
-	data.sort(key=lambda x: parse(x['created_time']), reverse=True)
-	print (eventData)
-	# json.dump(data, open('docs/{}.json'.format(page_id), 'w'))
+	# data.extend(old_data)
+	# data.sort(key=lambda x: parse(x['created_time']), reverse=True)
+	# pprint (eventData)
+	# for data in eventData :
+	# 	query = "INSERT INTO "
+	# json.dump(eventData, open('docs/{}.json'.format(page_id), 'w'))
 
-	return data
+	return eventData
 
 
 def remove_duplicates(data):
@@ -269,7 +272,7 @@ def get_aggregated_feed(pages):
 	for page_name, _id in pages:
 		page_data = get_feed(_id)
 		for data_dict in page_data:
-			data_dict['source'] = page_name
+			data_dict['pageName'] = page_name
 		data.extend(page_data)
 
 	data.sort(key=lambda x: parse(x['created_time']), reverse=True)
@@ -290,10 +293,10 @@ if __name__ == "__main__":
 	news_pages = [('Test Page', 'utilobot')]
 
 	data = get_aggregated_feed(news_pages)
-# 	data = remove_duplicates(data)
-# 	data = prettify_date(data)
+	data = remove_duplicates(data)
+	# data = prettify_date(data)
 
-# 	json.dump(data, open('docs/feed.json', 'w'))
+	json.dump(data, open('./events.json', 'w'))
 # 	write_html(data, 'docs/index.html')
 
 # 	localtime = str(time.asctime( time.localtime(time.time()) ))

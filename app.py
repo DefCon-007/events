@@ -1,12 +1,13 @@
 from flask import Flask, render_template, url_for, request, session, redirect
 from flask_session import Session
+from flask_cors import CORS, cross_origin
 import MySQLdb
 import json
 from flask import jsonify
 from datetime import datetime,timedelta
 app = Flask(__name__)
 sess = Session()
-
+CORS(app)
 @app.route("/all-events")
 def allEvents() :
 	eventsList = json.load(open("./events.json" , "r"))

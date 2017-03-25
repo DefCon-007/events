@@ -21,4 +21,5 @@ target/
 .ipynb_checkpoints
 
 ACCESS_TOKEN
-./flask_session 
+./flask_session/* 
+events.json

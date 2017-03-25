@@ -100,6 +100,10 @@ def get_event(post_id, page_id):
 					placeLocation = None 
 			else : 
 				placeName = None 
+			if "name" in event.keys(): 
+				name = event["name"]
+			else :
+				name = None
 			try : 
 				attenders = event["attending_count"]
 			except KeyError :
@@ -113,6 +117,7 @@ def get_event(post_id, page_id):
 				 "startDate" : startDate,
 				 "startTime" : startTime,
 				 "placeName" : placeName,
+				 "name" : name,
 				 "placeLocation" : placeLocation,
 				 "attenders" : attenders}
 	if placeLocation :

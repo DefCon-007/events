@@ -110,20 +110,20 @@ def get_event(post_id, page_id):
 				attenders = 0 
 
 			# return message
-	eventDict = {"id" : post_id,
-				 "link" : get_link(post_id),
-				 "pic" : get_event_picture(post_id),
-				 "description":description,
-				 "startDate" : startDate,
-				 "startTime" : startTime,
-				 "placeName" : placeName,
-				 "name" : name,
-				 "placeLocation" : placeLocation,
-				 "attenders" : attenders}
-	if placeLocation :
-		eventDict["placeLocation"]["longitude"] = float(eventDict["placeLocation"]["longitude"])
-		eventDict["placeLocation"]["latitude"] = float(eventDict["placeLocation"]["latitude"])
-	return (eventDict)
+			eventDict = {"id" : post_id,
+						 "link" : get_link(post_id),
+						 "pic" : get_event_picture(post_id),
+						 "description":description,
+						 "startDate" : startDate,
+						 "startTime" : startTime,
+						 "placeName" : placeName,
+						 "name" : name,
+						 "placeLocation" : placeLocation,
+						 "attenders" : attenders}
+			if placeLocation :
+				eventDict["placeLocation"]["longitude"] = float(eventDict["placeLocation"]["longitude"])
+				eventDict["placeLocation"]["latitude"] = float(eventDict["placeLocation"]["latitude"])
+			return (eventDict)
 
 
 def get_shared_post(post_id):
@@ -161,7 +161,7 @@ def get_video(post_id) :
 		return msg
 	else : 
 		return ""
-def get_feed(page_id, pages=2):
+def get_feed(page_id, pages=15):
 	# check last update time
 	# try:
 	# 	old_data = json.load(open('docs/{}.json'.format(page_id), 'r'))
@@ -170,7 +170,7 @@ def get_feed(page_id, pages=2):
 	# 	old_data = []
 	# 	last_post_time = parse("1950-01-01T12:05:06+0000")
 
-	base_query = page_id + '/feed?limit=2'
+	base_query = page_id + '/feed?limit=10'
 
 	# scrape the first page
 	print('scraping:', base_query)
@@ -223,10 +223,13 @@ def get_feed(page_id, pages=2):
 			# post_dict['link'] = get_link(post_dict['id'])
 			if "story" in post_dict :  #Events and shared post have story key
 				if "event" in post_dict['story'] :
-					eventDetails = get_event(post_dict['id'], page_id)
-					eventDetails["created_time"] = post_dict["created_time"]
+					try :
+						eventDetails = get_event(post_dict['id'], page_id)
+						eventDetails["created_time"] = post_dict["created_time"]
 					# post_dict['pic'] = get_event_picture(post_dict['id'],)
-					eventData.append(eventDetails)
+						eventData.append(eventDetails)
+					except :
+						pass
 				# elif "shared" in post_dict['story'] :
 
 				# 	post_dict['message'] = '<b>' + post_dict['story'] + '</b>' + '\n\n' + get_shared_post(post_dict['id']) 
@@ -286,16 +289,16 @@ def get_aggregated_feed(pages):
 
 if __name__ == "__main__":
 	# Great thanks to https://gist.github.com/abelsonlive/4212647
-	# news_pages = [('The Scholar\'s Avenue', 'scholarsavenue'),
-	# 			  ('Awaaz IIT Kharagpur', 'awaaziitkgp'),
-	# 			  ('Technology Students Gymkhana', 'TSG.IITKharagpur'),
-	# 			  ('Technology IIT KGP', 'iitkgp.tech'),
-	# 			  ('Metakgp', 'metakgp'),
-	# 			("KOSS" , "kossiitkgp"),
-	# 			("Spring Fest" , "springfest.iitkgp"),
-	# 			("Kshitij" , "ktj.iitkgp")]
+	news_pages = [('The Scholar\'s Avenue', 'scholarsavenue'),
+				  ('Awaaz IIT Kharagpur', 'awaaziitkgp'),
+				  ('Technology Students Gymkhana', 'TSG.IITKharagpur'),
+				  ('Technology IIT KGP', 'iitkgp.tech'),
+				  ('Metakgp', 'metakgp'),
+				("KOSS" , "kossiitkgp"),
+				("Spring Fest" , "springfest.iitkgp"),
+				("Kshitij" , "ktj.iitkgp")]
 	# for_later = ['Cultural-IIT-Kharagpur']
-	news_pages = [('Test Page', 'utilobot')]
+	# news_pages = [('Test Page', 'utilobot')]
 
 	data = get_aggregated_feed(news_pages)
 	data = remove_duplicates(data)

@@ -20,7 +20,7 @@ api.
 
 ## API Endpoints 
 
-/all-events <br>
+### /all-events <br>
     This endpoint returns all the events <br>
     Parameters required :<br>
         None <br>
@@ -48,7 +48,7 @@ api.
                         attenders: Integer, Number of attendess of the event<br>
                         name : String, Name of the event or Null if no name is present<br>
 
-/events-on-date  , method : POST
+### /events-on-date  , method : POST
     This endpoint returns all the events happening on the suppiled date 
     Parameters required :
         date : Proper date in the format (DD-MM-YYYY)
